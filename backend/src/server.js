@@ -100,8 +100,7 @@ async function startServer() {
     const isConnected = await testConnection();
     
     if (!isConnected) {
-      console.error('❌ Falha na conexão com Supabase. Verifique as variáveis de ambiente.');
-      process.exit(1);
+      console.warn('⚠️  Não foi possível validar a conexão com o Supabase agora. A API iniciará mesmo assim.');
     }
 
     // Verificar se a tabela usuarios existe
@@ -123,7 +122,7 @@ async function startServer() {
 
   } catch (error) {
     console.error('❌ Erro ao inicializar servidor:', error);
-    process.exit(1);
+    // Não encerra o processo para permitir inspeção e health-check
   }
 }
 
