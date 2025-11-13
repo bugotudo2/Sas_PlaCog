@@ -14,8 +14,16 @@ const router = express.Router();
  */
 router.post('/', async (req, res) => {
   try {
+    console.log('📝 Recebendo requisição de cadastro:', { 
+      email: req.body?.email, 
+      nome: req.body?.nome,
+      hasPassword: !!req.body?.senha 
+    });
+    
     const userData = req.body;
     const newUser = await UserService.create(userData);
+    
+    console.log('✅ Usuário criado com sucesso:', newUser.id);
     
     res.status(201).json({
       success: true,
@@ -23,6 +31,7 @@ router.post('/', async (req, res) => {
       data: newUser
     });
   } catch (error) {
+    console.error('❌ Erro ao criar usuário:', error.message);
     res.status(400).json({
       success: false,
       message: error.message
@@ -256,6 +265,8 @@ router.post('/:id/restore', async (req, res) => {
  */
 router.post('/verify-password', async (req, res) => {
   try {
+    console.log('🔐 Recebendo requisição de login:', { email: req.body?.email });
+    
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -268,18 +279,22 @@ router.post('/verify-password', async (req, res) => {
     const result = await UserService.verifyPassword(email, password);
     
     if (!result.isValid) {
+      console.log('❌ Login falhou: credenciais inválidas');
       return res.status(401).json({
         success: false,
         message: 'Email ou senha inválidos'
       });
     }
 
+    console.log('✅ Login bem-sucedido:', result.user.id);
+    
     res.json({
       success: true,
       message: 'Credenciais válidas',
       data: result.user
     });
   } catch (error) {
+    console.error('❌ Erro ao verificar senha:', error.message);
     res.status(500).json({
       success: false,
       message: error.message

@@ -16,12 +16,38 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware de segurança
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false // Desabilitar CSP para permitir requisições do frontend
+}));
 
-// CORS
+// CORS - Aceitar múltiplas origens para produção
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:3000',
+  'http://localhost:5173', // Vite default
+].filter(Boolean); // Remove valores undefined/null
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  origin: function (origin, callback) {
+    // Permitir requisições sem origin (mobile apps, Postman, etc)
+    if (!origin) return callback(null, true);
+    
+    // Permitir se a origem está na lista ou se estamos em desenvolvimento
+    if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      // Em produção, aceitar também URLs do Render
+      if (origin.includes('.onrender.com') || origin.includes('render.com')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Rate limiting
@@ -41,7 +67,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Middleware de logging
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - Origin: ${req.headers.origin || 'N/A'}`);
   next();
 });
 

@@ -1,7 +1,12 @@
 import axios from 'axios'
 
 // Configuração base da API
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+// No Render, VITE_API_URL será definida automaticamente via envVar
+const API_BASE_URL = import.meta.env.VITE_API_URL 
+  ? `${import.meta.env.VITE_API_URL}/api` 
+  : 'http://localhost:3001/api'
+
+console.log('🔧 API Base URL configurada:', API_BASE_URL)
 
 // Instância do axios com configurações padrão
 const api = axios.create({
@@ -35,11 +40,23 @@ api.interceptors.response.use(
     return response.data
   },
   (error) => {
+    console.error('❌ Erro na resposta da API:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+      url: error.config?.url
+    })
+    
     if (error.response?.status === 401) {
       // Token expirado ou inválido
       localStorage.removeItem('user')
-      window.location.href = '/login'
+      // Não redirecionar automaticamente em produção para evitar loops
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
     }
+    
+    // Preservar o erro original para tratamento específico
     return Promise.reject(error)
   }
 )
@@ -50,12 +67,15 @@ export const authService = {
    */
   async login(email, password) {
     try {
+      console.log('🔐 Tentando fazer login:', { email })
       const response = await api.post('/users/verify-password', {
         email,
         password
       })
+      console.log('✅ Login bem-sucedido:', response)
       return response
     } catch (error) {
+      console.error('❌ Erro ao fazer login:', error)
       throw this.handleError(error)
     }
   },
@@ -65,9 +85,12 @@ export const authService = {
    */
   async register(userData) {
     try {
+      console.log('📝 Tentando registrar usuário:', { email: userData.email, nome: userData.nome })
       const response = await api.post('/users', userData)
+      console.log('✅ Usuário registrado com sucesso:', response)
       return response
     } catch (error) {
+      console.error('❌ Erro ao registrar usuário:', error)
       throw this.handleError(error)
     }
   },

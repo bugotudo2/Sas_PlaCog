@@ -30,7 +30,8 @@ const LoginPage = () => {
         toast.error(response.message || 'Erro ao fazer login')
       }
     } catch (error) {
-      toast.error('Erro de conexão. Tente novamente.')
+      const errorMessage = error.message || error.response?.data?.message || 'Erro de conexão. Verifique sua internet e tente novamente.'
+      toast.error(errorMessage)
       console.error('Login error:', error)
     } finally {
       setIsLoading(false)

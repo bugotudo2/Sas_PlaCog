@@ -39,7 +39,8 @@ const RegisterPage = () => {
         toast.error(response.message || 'Erro ao fazer cadastro')
       }
     } catch (error) {
-      toast.error('Erro de conexão. Tente novamente.')
+      const errorMessage = error.message || error.response?.data?.message || 'Erro de conexão. Verifique sua internet e tente novamente.'
+      toast.error(errorMessage)
       console.error('Register error:', error)
     } finally {
       setIsLoading(false)

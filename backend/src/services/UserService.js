@@ -14,31 +14,38 @@ export class UserService {
    */
   static async create(userData) {
     try {
+      console.log('🔍 Validando dados do usuário...');
       // Validar dados
       const validation = User.validate(userData);
       if (!validation.isValid) {
+        console.error('❌ Validação falhou:', validation.errors);
         throw new Error(`Dados inválidos: ${validation.errors.join(', ')}`);
       }
 
+      console.log('🔍 Verificando se email já existe...');
       // Verificar se email já existe
       const existingUser = await this.findByEmail(userData.email);
       if (existingUser && !existingUser.isDeleted()) {
         throw new Error('Email já está em uso');
       }
 
+      console.log('🔍 Verificando se CPF já existe...');
       // Verificar se CPF já existe
       const existingCpf = await this.findByCpf(userData.cpf);
       if (existingCpf && !existingCpf.isDeleted()) {
         throw new Error('CPF já está em uso');
       }
 
+      console.log('🔍 Criando instância do usuário...');
       // Criar instância do usuário
       const user = new User(userData);
       const userDataForDb = user.toDatabase();
 
+      console.log('🔍 Fazendo hash da senha...');
       // Hash da senha
       userDataForDb.senha = await bcrypt.hash(userDataForDb.senha, 12);
 
+      console.log('🔍 Inserindo no banco de dados...');
       // Inserir no banco
       const { data, error } = await supabase
         .from('usuarios')
@@ -51,11 +58,14 @@ export class UserService {
         .single();
 
       if (error) {
+        console.error('❌ Erro do Supabase:', error);
         throw new Error(`Erro ao criar usuário: ${error.message}`);
       }
 
+      console.log('✅ Usuário criado no banco:', data.id);
       return new User(data).toResponse();
     } catch (error) {
+      console.error('❌ Erro em UserService.create:', error);
       throw error;
     }
   }
@@ -320,14 +330,23 @@ export class UserService {
    */
   static async verifyPassword(email, password) {
     try {
+      console.log('🔍 Buscando usuário por email:', email);
       const user = await this.findByEmail(email);
       if (!user) {
+        console.log('❌ Usuário não encontrado');
         return { isValid: false, user: null };
       }
 
+      console.log('🔍 Verificando senha...');
       const isValid = await bcrypt.compare(password, user.senha);
+      if (isValid) {
+        console.log('✅ Senha válida');
+      } else {
+        console.log('❌ Senha inválida');
+      }
       return { isValid, user: user.toResponse() };
     } catch (error) {
+      console.error('❌ Erro em UserService.verifyPassword:', error);
       throw error;
     }
   }
